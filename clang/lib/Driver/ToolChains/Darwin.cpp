@@ -1017,7 +1017,7 @@ bool Darwin::hasBlocksRuntime() const {
   if (isTargetWatchOSBased() || isTargetDriverKit() || isTargetXROS())
     return true;
   else if (isTargetIOSBased())
-    return !isIPhoneOSVersionLT(3, 2);
+    return true;
   else {
     assert(isTargetMacOSBased() && "unexpected darwin target");
     return !isMacosxVersionLT(10, 6);

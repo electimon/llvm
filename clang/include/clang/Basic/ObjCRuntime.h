@@ -171,7 +171,7 @@ public:
     switch (getKind()) {
     case FragileMacOSX: return getVersion() >= VersionTuple(10, 7);
     case MacOSX: return getVersion() >= VersionTuple(10, 7);
-    case iOS: return getVersion() >= VersionTuple(5);
+    case iOS: return getVersion() >= VersionTuple(3);
     case WatchOS: return true;
 
     case GCC: return false;
