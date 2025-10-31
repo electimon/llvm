@@ -77,32 +77,7 @@ protected:
 public:
   DarwinTargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : AppleMachOTargetInfo<Target>(Triple, Opts) {
-    // By default, no TLS, and we list permitted architecture/OS
-    // combinations.
-    this->TLSSupported = false;
-
-    if (Triple.isMacOSX())
-      this->TLSSupported = !Triple.isMacOSXVersionLT(10, 7);
-    else if (Triple.isiOS()) {
-      // 64-bit iOS supported it from 8 onwards, 32-bit device from 9 onwards,
-      // 32-bit simulator from 10 onwards.
-      if (Triple.isArch64Bit())
-        this->TLSSupported = !Triple.isOSVersionLT(8);
-      else if (Triple.isArch32Bit()) {
-        if (!Triple.isSimulatorEnvironment())
-          this->TLSSupported = !Triple.isOSVersionLT(9);
-        else
-          this->TLSSupported = !Triple.isOSVersionLT(10);
-      }
-    } else if (Triple.isWatchOS()) {
-      if (!Triple.isSimulatorEnvironment())
-        this->TLSSupported = !Triple.isOSVersionLT(2);
-      else
-        this->TLSSupported = !Triple.isOSVersionLT(3);
-    } else if (Triple.isDriverKit()) {
-      // No TLS on DriverKit.
-    } else if (Triple.isXROS())
-      this->TLSSupported = true;
+    this->TLSSupported = true;
 
     this->MCountName = "\01mcount";
   }

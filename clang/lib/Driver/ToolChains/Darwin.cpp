@@ -641,8 +641,8 @@ void darwin::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   // Outline from linkonceodr functions by default in LTO, whenever the outliner
   // is enabled.  Note that the target may enable the machine outliner
   // independently of -moutline.
-  CmdArgs.push_back("-mllvm");
-  CmdArgs.push_back("-enable-linkonceodr-outlining");
+  //CmdArgs.push_back("-mllvm");
+  //CmdArgs.push_back("-enable-linkonceodr-outlining");
 
   // Propagate codegen data flags to the linker for the LLVM backend.
   auto *CodeGenDataGenArg =
@@ -2705,6 +2705,7 @@ void AppleMachO::AddCXXStdlibLibArgs(const ArgList &Args,
   switch (Type) {
   case ToolChain::CST_Libcxx:
     CmdArgs.push_back("-lc++");
+    CmdArgs.push_back("-lc++abi");
     if (Args.hasArg(options::OPT_fexperimental_library))
       CmdArgs.push_back("-lc++experimental");
     break;
