@@ -90,7 +90,7 @@ public:
         this->TLSSupported = !Triple.isOSVersionLT(8);
       else if (Triple.isArch32Bit()) {
         if (!Triple.isSimulatorEnvironment())
-          this->TLSSupported = !Triple.isOSVersionLT(9);
+          this->TLSSupported = !Triple.isOSVersionLT(3);
         else
           this->TLSSupported = !Triple.isOSVersionLT(10);
       }
