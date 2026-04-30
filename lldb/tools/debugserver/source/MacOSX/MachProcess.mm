@@ -4444,7 +4444,6 @@ bool MachProcess::ProcessUsingFrontBoard() {
 }
 
 bool MachProcess::ProcessUsingSpringBoard() {
-  CalculateBoardStatus();
   return (m_flags & 16) != 0;
 }
 

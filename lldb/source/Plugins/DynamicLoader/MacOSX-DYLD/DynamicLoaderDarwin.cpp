@@ -1243,6 +1243,9 @@ bool DynamicLoaderDarwin::UseDYLDSPI(Process *process) {
     // NEED_BRIDGEOS_TRIPLE   use_new_spi_interface = true;
   }
 
+  // im sorry
+  use_new_spi_interface = false;
+
   if (log) {
     if (use_new_spi_interface)
       LLDB_LOGF(
