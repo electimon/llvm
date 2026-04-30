@@ -254,7 +254,7 @@ static void *waitpid_thread(void *arg) {
   int status;
 
 #if defined(__APPLE__)
-  pthread_setname_np("waitpid thread");
+//  pthread_setname_np("waitpid thread");
 #if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
   struct sched_param thread_param;
   int thread_sched_policy;
@@ -1820,7 +1820,8 @@ void DNBInitialize() {
 #if defined(__i386__) || defined(__x86_64__)
   DNBArchImplX86_64::Initialize();
 #elif defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
-  DNBArchMachARM64::Initialize();
+  DNBArchMachARM::Initialize();
+//  DNBArchMachARM64::Initialize();
 #endif
 }
 
@@ -1839,9 +1840,6 @@ nub_bool_t DNBSetArchitecture(const char *arch) {
     else if (strstr(arch, "arm64_32") == arch ||
              strstr(arch, "aarch64_32") == arch)
       return DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM64_32);
-    else if (strstr(arch, "arm64e") == arch)
-      return DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM64,
-                                              CPU_SUBTYPE_ARM64E);
     else if (strstr(arch, "arm64") == arch || strstr(arch, "aarch64") == arch)
       return DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM64,
                                               CPU_SUBTYPE_ARM64_ALL);

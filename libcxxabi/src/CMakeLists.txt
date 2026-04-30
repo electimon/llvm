@@ -238,9 +238,6 @@ endfunction()
 function(reexport_symbols file)
   export_symbols("${file}")
   # -reexported_symbols_list is only available on Apple platforms
-  if (APPLE)
-    target_link_libraries(cxxabi-reexports INTERFACE "-Wl,-reexported_symbols_list,${file}")
-  endif()
 endfunction()
 
 export_symbols("${CMAKE_CURRENT_SOURCE_DIR}/../lib/symbols-not-reexported.exp")

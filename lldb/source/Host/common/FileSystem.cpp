@@ -404,7 +404,7 @@ static int GetOpenFlags(File::OpenOptions options) {
   if (options & File::eOpenOptionNonBlocking)
     open_flags |= O_NONBLOCK;
   if (options & File::eOpenOptionCloseOnExec)
-    open_flags |= O_CLOEXEC;
+    open_flags |= 0x1000000;
 #else
   open_flags |= O_BINARY;
 #endif

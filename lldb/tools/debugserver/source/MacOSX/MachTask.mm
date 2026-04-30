@@ -43,8 +43,7 @@
 #ifdef WITH_SPRINGBOARD
 
 #include <CoreFoundation/CoreFoundation.h>
-#include <SpringBoardServices/SBSWatchdogAssertion.h>
-#include <SpringBoardServices/SpringBoardServer.h>
+#include <SpringBoardServices/SpringBoardServices.h>
 
 #endif
 
@@ -63,10 +62,6 @@ extern "C" {
 #include <pmenergy.h>
 #include <pmsample.h>
 #endif
-
-extern "C" int
-proc_get_cpumon_params(pid_t pid, int *percentage,
-                       int *interval); // <libproc_internal.h> SPI
 
 //----------------------------------------------------------------------
 // MachTask constructor
@@ -269,20 +264,7 @@ static void get_threads_profile_data(DNBProfileDataScanType scanType,
           MachThread::GetGloballyUniqueThreadIDForMachPortID(threads[i]);
       threads_id.push_back(tid);
 
-      if ((scanType & eProfileThreadName) &&
-          (identifier_info.thread_handle != 0)) {
-        struct proc_threadinfo proc_threadinfo;
-        int len = ::proc_pidinfo(pid, PROC_PIDTHREADINFO,
-                                 identifier_info.thread_handle,
-                                 &proc_threadinfo, PROC_PIDTHREADINFO_SIZE);
-        if (len && proc_threadinfo.pth_name[0]) {
-          threads_name.push_back(proc_threadinfo.pth_name);
-        } else {
-          threads_name.push_back("");
-        }
-      } else {
         threads_name.push_back("");
-      }
       struct timeval tv;
       struct timeval thread_tv;
       TIME_VALUE_TO_TIMEVAL(&basic_info.user_time, &thread_tv);
@@ -420,8 +402,9 @@ std::string MachTask::GetProfileData(DNBProfileDataScanType scanType) {
     if (scanType & eProfileHostMemory)
       profile_data_stream << "total:" << physical_memory << ';';
 
+/*
     if (scanType & eProfileMemory) {
-      static vm_size_t pagesize = vm_kernel_page_size;
+      static vm_size_t pagesize = vm_page_size;
 
       // This mimicks Activity Monitor.
       uint64_t total_used_count =
@@ -435,7 +418,7 @@ std::string MachTask::GetProfileData(DNBProfileDataScanType scanType) {
       }
       
       profile_data_stream << "phys_footprint:" << phys_footprint << ';';
-    }
+    }*/
     
     if (scanType & eProfileMemoryCap) {
       profile_data_stream << "mem_cap:" << memory_cap << ';';
@@ -475,16 +458,6 @@ std::string MachTask::GetProfileData(DNBProfileDataScanType scanType) {
       }
     }
 #endif
-
-    if (scanType & eProfileEnergyCPUCap) {
-      int percentage = -1;
-      int interval = -1;
-      int result = proc_get_cpumon_params(pid, &percentage, &interval);
-      if ((result == 0) && (percentage >= 0) && (interval >= 0)) {
-        profile_data_stream << "cpu_cap_p:" << percentage << ';';
-        profile_data_stream << "cpu_cap_t:" << interval << ';';
-      }
-    }
 
     profile_data_stream << "--end--;";
 
@@ -709,7 +682,7 @@ void *MachTask::ExceptionThread(void *arg) {
                    arg);
 
 #if defined(__APPLE__)
-  pthread_setname_np("exception monitoring thread");
+//  pthread_setname_np("exception monitoring thread");
 #if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
   struct sched_param thread_param;
   int thread_sched_policy;
@@ -750,7 +723,7 @@ void *MachTask::ExceptionThread(void *arg) {
 
   if (mach_proc->ProcessUsingSpringBoard()) {
     // Request a renewal for every 60 seconds if we attached using SpringBoard
-    watchdog.reset(::SBSWatchdogAssertionCreateForPID(NULL, pid, 60));
+    watchdog.reset(::SBSWatchdogAssertionCreateForPID(NULL, pid)); // nah
     DNBLogThreadedIf(
         LOG_TASK, "::SBSWatchdogAssertionCreateForPID (NULL, %4.4x, 60 ) => %p",
         pid, watchdog.get());
@@ -777,7 +750,7 @@ void *MachTask::ExceptionThread(void *arg) {
       periodic_timeout = watchdog_timeout;
   }
 #endif // #if defined (WITH_SPRINGBOARD) && !defined (WITH_BKS)
-
+/*
 #ifdef WITH_BKS
   CFReleaser<BKSWatchdogAssertionRef> watchdog;
   if (mach_proc->ProcessUsingBackBoard()) {
@@ -785,7 +758,7 @@ void *MachTask::ExceptionThread(void *arg) {
     CFAllocatorRef alloc = kCFAllocatorDefault;
     watchdog.reset(::BKSWatchdogAssertionCreateForPID(alloc, pid));
   }
-#endif // #ifdef WITH_BKS
+#endif*/
 
   while (mach_task->ExceptionPortIsValid()) {
     ::pthread_testcancel();
@@ -900,9 +873,10 @@ void *MachTask::ExceptionThread(void *arg) {
     // that will forward SBSWatchdogAssertionRelease to
     // SBSWatchdogAssertionCancel for now
     // so it should still build either way.
+    // TODO: remove the above TODO LMAO
     DNBLogThreadedIf(LOG_TASK, "::SBSWatchdogAssertionRelease(%p)",
                      watchdog.get());
-    ::SBSWatchdogAssertionRelease(watchdog.get());
+    ::SBSWatchdogAssertionCancel(watchdog.get());
   }
 #endif // #if defined (WITH_SPRINGBOARD) && !defined (WITH_BKS)
 

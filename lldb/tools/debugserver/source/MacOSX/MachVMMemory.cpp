@@ -75,79 +75,9 @@ nub_size_t MachVMMemory::MaxBytesLeftInPage(task_t task, nub_addr_t addr,
 #define MAX_STACK_ALLOC_DISPOSITIONS                                           \
   (16 * 1024 / sizeof(int)) // 16K of allocations
 
-std::vector<nub_addr_t> get_dirty_pages(task_t task, mach_vm_address_t addr,
-                                        mach_vm_size_t size) {
-  std::vector<nub_addr_t> dirty_pages;
-
-  int pages_to_query = size / vm_page_size;
-  // Don't try to fetch too many pages' dispositions in a single call or we
-  // could blow our stack out.
-  mach_vm_size_t dispositions_size =
-      std::min(pages_to_query, (int)MAX_STACK_ALLOC_DISPOSITIONS);
-  int dispositions[dispositions_size];
-
-  mach_vm_size_t chunk_count =
-      ((pages_to_query + MAX_STACK_ALLOC_DISPOSITIONS - 1) /
-       MAX_STACK_ALLOC_DISPOSITIONS);
-
-  for (mach_vm_size_t cur_disposition_chunk = 0;
-       cur_disposition_chunk < chunk_count; cur_disposition_chunk++) {
-    mach_vm_size_t dispositions_already_queried =
-        cur_disposition_chunk * MAX_STACK_ALLOC_DISPOSITIONS;
-
-    mach_vm_size_t chunk_pages_to_query = std::min(
-        pages_to_query - dispositions_already_queried, dispositions_size);
-    mach_vm_address_t chunk_page_aligned_start_addr =
-        addr + (dispositions_already_queried * vm_page_size);
-
-    kern_return_t kr = mach_vm_page_range_query(
-        task, chunk_page_aligned_start_addr,
-        chunk_pages_to_query * vm_page_size, (mach_vm_address_t)dispositions,
-        &chunk_pages_to_query);
-    if (kr != KERN_SUCCESS)
-      return dirty_pages;
-    for (mach_vm_size_t i = 0; i < chunk_pages_to_query; i++) {
-      uint64_t dirty_addr = chunk_page_aligned_start_addr + (i * vm_page_size);
-      if (dispositions[i] & VM_PAGE_QUERY_PAGE_DIRTY)
-        dirty_pages.push_back(dirty_addr);
-    }
-  }
-  return dirty_pages;
-}
-
 nub_bool_t MachVMMemory::GetMemoryRegionInfo(task_t task, nub_addr_t address,
                                              DNBRegionInfo *region_info) {
-  MachVMRegion vmRegion(task);
-
-  if (vmRegion.GetRegionForAddress(address)) {
-    region_info->addr = vmRegion.StartAddress();
-    region_info->size = vmRegion.GetByteSize();
-    region_info->permissions = vmRegion.GetDNBPermissions();
-    region_info->dirty_pages =
-        get_dirty_pages(task, vmRegion.StartAddress(), vmRegion.GetByteSize());
-    region_info->vm_types = vmRegion.GetMemoryTypes();
-  } else {
-    region_info->addr = address;
-    region_info->size = 0;
-    if (vmRegion.GetError().Success()) {
-      // vmRegion.GetRegionForAddress() return false, indicating that "address"
-      // wasn't in a valid region, but the "vmRegion" info was successfully
-      // read from the task which means the info describes the next valid
-      // region from which we can infer the size of this invalid region
-      mach_vm_address_t start_addr = vmRegion.StartAddress();
-      if (address < start_addr)
-        region_info->size = start_addr - address;
-    }
-    // If we can't get any info about the size from the next region it means
-    // we asked about an address that was past all mappings, so the size
-    // of this region will take up all remaining address space.
-    if (region_info->size == 0)
-      region_info->size = INVALID_NUB_ADDRESS - region_info->addr;
-
-    // Not readable, writeable or executable
-    region_info->permissions = 0;
-  }
-  return true;
+  return false;
 }
 
 static uint64_t GetPhysicalMemory() {
@@ -172,27 +102,6 @@ nub_bool_t MachVMMemory::GetMemoryProfile(
 {
   if (scanType & eProfileHostMemory)
     physical_memory = GetPhysicalMemory();
-
-  if (scanType & eProfileMemory) {
-    static mach_port_t localHost = mach_host_self();
-    mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
-    host_statistics64(localHost, HOST_VM_INFO64, (host_info64_t)&vminfo,
-                      &count);
-    
-    kern_return_t kr;
-    mach_msg_type_number_t info_count;
-    task_vm_info_data_t vm_info;
-
-    info_count = TASK_VM_INFO_COUNT;
-    kr = task_info(task, TASK_VM_INFO_PURGEABLE, (task_info_t)&vm_info, &info_count);
-    if (kr == KERN_SUCCESS) {
-      if (scanType & eProfileMemoryAnonymous) {
-        anonymous = vm_info.internal + vm_info.compressed - vm_info.purgeable_volatile_pmap;
-      }
-
-      phys_footprint = vm_info.phys_footprint;
-    }
-  }
 
 #if defined(WITH_FBS) || defined(WITH_BKS)
   if (scanType & eProfileMemoryCap) {

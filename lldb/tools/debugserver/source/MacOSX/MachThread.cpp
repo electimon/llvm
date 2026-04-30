@@ -31,7 +31,7 @@ MachThread::MachThread(MachProcess *process, bool is_64_bit,
       m_state(eStateUnloaded), m_state_mutex(PTHREAD_MUTEX_RECURSIVE),
       m_suspend_count(0), m_stop_exception(),
       m_arch_up(DNBArchProtocol::Create(this)), m_reg_sets(NULL),
-      m_num_reg_sets(0), m_extended_info(), m_dispatch_queue_name(),
+      m_num_reg_sets(0), m_dispatch_queue_name(),
       m_is_64_bit(is_64_bit), m_pthread_qos_class_decode(nullptr) {
   nub_size_t num_reg_sets = 0;
   m_reg_sets = m_arch_up->GetRegisterSetInfo(&num_reg_sets);
@@ -265,22 +265,11 @@ bool MachThread::GetBasicInfo(thread_t thread,
 }
 
 struct thread_extended_info *MachThread::GetExtendedInfo() {
-  if (MachThread::GetExtendedInfo(m_mach_port_number, &m_extended_info))
-    return &m_extended_info;
   return NULL;
 }
 
 bool MachThread::GetExtendedInfo(thread_t thread,
                                  struct thread_extended_info *extendedInfoPtr) {
-  if (MachPortNumberIsValid(thread)) {
-    mach_msg_type_number_t info_count = THREAD_EXTENDED_INFO_COUNT;
-    kern_return_t err =
-        ::thread_info(thread, THREAD_EXTENDED_INFO,
-                      (thread_info_t)extendedInfoPtr, &info_count);
-    if (err == KERN_SUCCESS)
-      return true;
-  }
-  ::memset(extendedInfoPtr, 0, sizeof(struct thread_extended_info));
   return false;
 }
 
@@ -605,8 +594,6 @@ const char *MachThread::GetName() {
   // thread.  It changes over time, for instance
   // if the thread name changes, then the thread_handle also changes...  So you
   // have to refetch it every time.
-  if (GetExtendedInfo() && m_extended_info.pth_name[0])
-    return m_extended_info.pth_name;
   return NULL;
 }
 

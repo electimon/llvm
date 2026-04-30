@@ -13,7 +13,7 @@
 #include "RNBRemote.h"
 
 #include <bsm/audit.h>
-#include <bsm/audit_session.h>
+//#include <bsm/audit_session.h>
 #include <cerrno>
 #include <csignal>
 #include <libproc.h>
@@ -46,7 +46,7 @@
 #include "RNBSocket.h"
 #include "StdStringExtractor.h"
 
-#include <compression.h>
+//#include <compression.h>
 
 #include <TargetConditionals.h>
 #include <algorithm>
@@ -639,7 +639,7 @@ RNBRemote::SendAsyncJSONPacket(const JSONGenerator::Dictionary &dictionary) {
 //    requested compression scheme>
 //
 // If compression is not requested, the original packet contents are returned
-
+/*
 std::string RNBRemote::CompressString(const std::string &orig) {
   std::string compressed;
   compression_types compression_type = GetCompressionType();
@@ -754,23 +754,21 @@ std::string RNBRemote::CompressString(const std::string &orig) {
 
   return compressed;
 }
-
+*/
 rnb_err_t RNBRemote::SendPacket(const std::string &s) {
   DNBLogThreadedIf(LOG_RNB_MAX, "%8d RNBRemote::%s (%s) called",
                    (uint32_t)m_comm.Timer().ElapsedMicroSeconds(true),
                    __FUNCTION__, s.c_str());
 
-  std::string s_compressed = CompressString(s);
-
-  std::string sendpacket = "$" + s_compressed + "#";
+  std::string sendpacket = "$" + s + "#";
   int cksum = 0;
   char hexbuf[5];
 
   if (m_noack_mode) {
     sendpacket += "00";
   } else {
-    for (size_t i = 0; i != s_compressed.size(); ++i)
-      cksum += s_compressed[i];
+    for (size_t i = 0; i != s.size(); ++i)
+      cksum += s[i];
     snprintf(hexbuf, sizeof hexbuf, "%02x", cksum & 0xff);
     sendpacket += hexbuf;
   }
@@ -1207,7 +1205,7 @@ void *RNBRemote::ThreadFunctionReadRemoteData(void *arg) {
   if (remoteSP.get() != NULL) {
 
 #if defined(__APPLE__)
-    pthread_setname_np("read gdb-remote packets thread");
+//    pthread_setname_np("read gdb-remote packets thread");
 #if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
     struct sched_param thread_param;
     int thread_sched_policy;
@@ -5657,6 +5655,13 @@ rnb_err_t RNBRemote::HandlePacket_jThreadsInfo(const char *p) {
     }
   }
   return SendErrorPacket("E85");
+}
+
+void uuid_unparse_upper(const unsigned char *uu, char *out) {
+    snprintf(out, 37,
+        "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+        uu[0], uu[1], uu[2], uu[3], uu[4], uu[5], uu[6], uu[7],
+        uu[8], uu[9], uu[10], uu[11], uu[12], uu[13], uu[14], uu[15]);
 }
 
 rnb_err_t RNBRemote::HandlePacket_jThreadExtendedInfo(const char *p) {

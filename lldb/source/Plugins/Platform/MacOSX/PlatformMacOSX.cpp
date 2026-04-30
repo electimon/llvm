@@ -10,7 +10,6 @@
 #include "PlatformRemoteMacOSX.h"
 #include "PlatformRemoteiOS.h"
 #if defined(__APPLE__)
-#include "PlatformAppleSimulator.h"
 #include "PlatformDarwinKernel.h"
 #include "PlatformRemoteAppleBridge.h"
 #include "PlatformRemoteAppleTV.h"
@@ -49,7 +48,6 @@ void PlatformMacOSX::Initialize() {
   PlatformRemoteiOS::Initialize();
   PlatformRemoteMacOSX::Initialize();
 #if defined(__APPLE__)
-  PlatformAppleSimulator::Initialize();
   PlatformDarwinKernel::Initialize();
   PlatformRemoteAppleTV::Initialize();
   PlatformRemoteAppleWatch::Initialize();
@@ -82,7 +80,6 @@ void PlatformMacOSX::Terminate() {
   PlatformRemoteAppleWatch::Terminate();
   PlatformRemoteAppleTV::Terminate();
   PlatformDarwinKernel::Terminate();
-  PlatformAppleSimulator::Terminate();
 #endif
   PlatformRemoteMacOSX::Initialize();
   PlatformRemoteiOS::Terminate();

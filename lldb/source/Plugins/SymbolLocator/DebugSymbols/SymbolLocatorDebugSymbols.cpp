@@ -1108,8 +1108,8 @@ bool SymbolLocatorDebugSymbols::DownloadObjectAndSymbolFile(
                                   command_output.size(), kCFAllocatorNull));
 
   CFCReleaser<CFDictionaryRef> plist(
-      (CFDictionaryRef)::CFPropertyListCreateWithData(
-          NULL, data.get(), kCFPropertyListImmutable, NULL, NULL));
+      (CFDictionaryRef)::CFPropertyListCreateFromXMLData(
+          NULL, data.get(), kCFPropertyListImmutable, NULL));
 
   if (!plist.get()) {
     LLDB_LOGF(log, "'%s' failed: output is not a valid plist",

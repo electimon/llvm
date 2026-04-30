@@ -125,20 +125,24 @@ uint64_t MachOLayoutBuilder::layoutSegments() {
     StringRef Segname;
     uint64_t SegmentVmAddr;
     uint64_t SegmentVmSize;
+
+    auto fixedStrRef = [](const char *Buf, size_t N) -> StringRef {
+      const char *End = static_cast<const char *>(memchr(Buf, '\0', N));
+      return End ? StringRef(Buf, End - Buf) : StringRef(Buf, N);
+    };
+
     switch (MLC.load_command_data.cmd) {
     case MachO::LC_SEGMENT:
       SegmentVmAddr = MLC.segment_command_data.vmaddr;
       SegmentVmSize = MLC.segment_command_data.vmsize;
-      Segname = StringRef(MLC.segment_command_data.segname,
-                          strnlen(MLC.segment_command_data.segname,
-                                  sizeof(MLC.segment_command_data.segname)));
+      Segname = fixedStrRef(MLC.segment_command_data.segname,
+                            sizeof(MLC.segment_command_data.segname));
       break;
     case MachO::LC_SEGMENT_64:
       SegmentVmAddr = MLC.segment_command_64_data.vmaddr;
       SegmentVmSize = MLC.segment_command_64_data.vmsize;
-      Segname = StringRef(MLC.segment_command_64_data.segname,
-                          strnlen(MLC.segment_command_64_data.segname,
-                                  sizeof(MLC.segment_command_64_data.segname)));
+      Segname = fixedStrRef(MLC.segment_command_64_data.segname,
+                            sizeof(MLC.segment_command_64_data.segname));
       break;
     default:
       continue;

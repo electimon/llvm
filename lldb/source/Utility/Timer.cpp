@@ -25,6 +25,10 @@ using namespace lldb_private;
 
 #define TIMER_INDENT_AMOUNT 2
 
+extern "C" void _tlv_atexit(void (*f)(void*), void *arg, void *dso) {
+    (void)f; (void)arg; (void)dso;
+}
+
 namespace {
 typedef std::vector<Timer *> TimerStack;
 static std::atomic<Timer::Category *> g_categories;

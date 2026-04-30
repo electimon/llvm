@@ -84,7 +84,7 @@ Status PipePosix::CreateNew(bool child_processes_inherit) {
 
   Status error;
 #if PIPE2_SUPPORTED
-  if (::pipe2(m_fds, (child_processes_inherit) ? 0 : O_CLOEXEC) == 0)
+  if (::pipe2(m_fds, (child_processes_inherit) ? 0 : 0x1000000) == 0)
     return error;
 #else
   if (::pipe(m_fds) == 0) {
@@ -152,7 +152,7 @@ Status PipePosix::OpenAsReader(llvm::StringRef name,
 
   int flags = O_RDONLY | O_NONBLOCK;
   if (!child_process_inherit)
-    flags |= O_CLOEXEC;
+    flags |= 0x1000000;
 
   Status error;
   int fd = FileSystem::Instance().Open(name.str().c_str(), flags);
@@ -174,7 +174,7 @@ PipePosix::OpenAsWriterWithTimeout(llvm::StringRef name,
 
   int flags = O_WRONLY | O_NONBLOCK;
   if (!child_process_inherit)
-    flags |= O_CLOEXEC;
+    flags |= 0x1000000;
 
   using namespace std::chrono;
   const auto finish_time = Now() + timeout;

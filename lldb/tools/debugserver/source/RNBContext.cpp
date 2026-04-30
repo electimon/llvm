@@ -147,7 +147,7 @@ void *RNBContext::ThreadFunctionProcessStatus(void *arg) {
   ctx.Events().SetEvents(RNBContext::event_proc_thread_running);
 
 #if defined(__APPLE__)
-  pthread_setname_np("child process status watcher thread");
+//  pthread_setname_np("child process status watcher thread");
 #if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
   struct sched_param thread_param;
   int thread_sched_policy;

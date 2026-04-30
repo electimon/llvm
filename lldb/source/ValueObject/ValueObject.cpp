@@ -956,7 +956,8 @@ ValueObject::ReadPointedString(lldb::WritableDataBufferSP &buffer_sp,
       while ((bytes_read = GetPointeeData(data, offset, k_max_buf_size)) > 0) {
         total_bytes_read += bytes_read;
         const char *cstr = data.PeekCStr(0);
-        size_t len = strnlen(cstr, k_max_buf_size);
+        const char *End = static_cast<const char *>(memchr(cstr, '\0', k_max_buf_size));
+        size_t len = End ? End - cstr : k_max_buf_size;
         if (cstr_len_displayed < 0)
           cstr_len_displayed = len;
 

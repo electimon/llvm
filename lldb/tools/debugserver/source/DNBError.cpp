@@ -16,7 +16,7 @@
 #include "PThreadMutex.h"
 
 #ifdef WITH_SPRINGBOARD
-#include <SpringBoardServices/SpringBoardServer.h>
+#include <SpringBoardServices/SpringBoardServices.h>
 #endif
 
 const char *DNBError::AsString() const {

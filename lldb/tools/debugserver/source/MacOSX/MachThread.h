@@ -153,7 +153,7 @@ protected:
   const DNBRegisterSetInfo
       *m_reg_sets; // Register set information for this thread
   nub_size_t m_num_reg_sets;
-  thread_extended_info_data_t m_extended_info;
+//  thread_extended_info_data_t m_extended_info;
   std::string m_dispatch_queue_name;
   bool m_is_64_bit;
 

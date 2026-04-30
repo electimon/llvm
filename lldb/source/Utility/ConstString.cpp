@@ -156,8 +156,8 @@ public:
   const char *GetConstTrimmedCStringWithLength(const char *cstr,
                                                size_t cstr_len) {
     if (cstr != nullptr) {
-      const size_t trimmed_len = strnlen(cstr, cstr_len);
-      return GetConstCStringWithLength(cstr, trimmed_len);
+      const char *End = static_cast<const char *>(memchr(cstr, '\0', cstr_len));
+      return GetConstCStringWithLength(cstr, End ? End - cstr : cstr_len);
     }
     return nullptr;
   }

@@ -20,13 +20,7 @@ list(APPEND PLUGIN_PLATFORM_MACOSX_SOURCES
   PlatformRemoteiOS.cpp
   )
 
-list(APPEND PLUGIN_PLATFORM_MACOSX_DARWIN_ONLY_SOURCES
-  PlatformAppleSimulator.cpp
-  )
-
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  add_subdirectory(objcxx)
-  set(OBJC_LIBS "lldbPluginPlatformMacOSXObjCXX")
   list(APPEND PLUGIN_PLATFORM_MACOSX_SOURCES
     ${PLUGIN_PLATFORM_MACOSX_DARWIN_ONLY_SOURCES})
 else()

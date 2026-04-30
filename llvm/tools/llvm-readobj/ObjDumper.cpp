@@ -75,8 +75,10 @@ void ObjDumper::printAsStringList(StringRef StringContent,
   const uint8_t *StrEnd = StringContent.bytes_end();
 
   while (CurrentWord <= StrEnd) {
-    size_t WordSize = strnlen(reinterpret_cast<const char *>(CurrentWord),
-                              StrEnd - CurrentWord);
+    const char *End = static_cast<const char *>(
+        memchr(CurrentWord, '\0', StrEnd - CurrentWord));
+    size_t WordSize = End ? End - reinterpret_cast<const char *>(CurrentWord)
+                          : StrEnd - CurrentWord;
     if (!WordSize) {
       CurrentWord++;
       continue;

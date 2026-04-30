@@ -16,6 +16,8 @@
 #include "GenealogySPI.h"
 #include "MachThreadList.h"
 
+#include <dispatch/dispatch.h>
+
 /// Constructor
 
 Genealogy::Genealogy()

@@ -1657,8 +1657,8 @@ void ObjectFileMachO::ProcessSegmentCommand(
   const bool is_dsym = (m_header.filetype == MH_DSYM);
   bool add_section = true;
   bool add_to_unified = true;
-  ConstString const_segname(
-      load_cmd.segname, strnlen(load_cmd.segname, sizeof(load_cmd.segname)));
+  const char *End = static_cast<const char *>(memchr(load_cmd.segname, '\0', sizeof(load_cmd.segname)));
+  ConstString const_segname(load_cmd.segname, End ? End - load_cmd.segname : sizeof(load_cmd.segname));
 
   SectionSP unified_section_sp(
       context.UnifiedList.FindSectionByName(const_segname));
@@ -1785,8 +1785,8 @@ void ObjectFileMachO::ProcessSegmentCommand(
     m_mach_sections.push_back(sect64);
 
     if (add_section) {
-      ConstString section_name(
-          sect64.sectname, strnlen(sect64.sectname, sizeof(sect64.sectname)));
+      const char *End = static_cast<const char *>(memchr(sect64.sectname, '\0', sizeof(sect64.sectname)));
+      ConstString section_name(sect64.sectname, End ? End - sect64.sectname : sizeof(sect64.sectname));
       if (!const_segname) {
         // We have a segment with no name so we need to conjure up segments
         // that correspond to the section's segname if there isn't already such
@@ -2692,7 +2692,7 @@ void ObjectFileMachO::ParseSymtab(Symtab &symtab) {
 
   typedef std::set<ConstString> IndirectSymbols;
   IndirectSymbols indirect_symbol_names;
-
+/*
 #if TARGET_OS_IPHONE
 
   // Some recent builds of the dyld_shared_cache (hereafter: DSC) have been
@@ -3718,7 +3718,7 @@ void ObjectFileMachO::ParseSymtab(Symtab &symtab) {
             }
           }
 
-#endif
+#endif*/
   lldb::offset_t nlist_data_offset = 0;
 
   if (nlist_data.GetByteSize() > 0) {

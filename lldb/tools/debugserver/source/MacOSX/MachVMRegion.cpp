@@ -183,6 +183,11 @@ uint32_t MachVMRegion::GetDNBPermissions() const {
   return dnb_permissions;
 }
 
+#define VM_MEMORY_MALLOC_LARGE_REUSABLE 8
+#define VM_MEMORY_MALLOC_LARGE_REUSED 9
+#define VM_MEMORY_MALLOC_NANO 11
+#define VM_MEMORY_SANITIZER 99
+
 std::vector<std::string> MachVMRegion::GetMemoryTypes() const {
   std::vector<std::string> types;
   if (m_data.user_tag == VM_MEMORY_STACK) {

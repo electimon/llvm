@@ -53,9 +53,9 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <dlfcn.h>
-#if HAVE_MACH_MACH_H
+//#if HAVE_MACH_MACH_H
 #include <mach/mach.h>
-#endif
+//#endif
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif

@@ -4,6 +4,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/..)
 include_directories(${LLDB_SOURCE_DIR}/source)
 include_directories(MacOSX)
 include_directories(MacOSX/x86_64)
+include_directories(MacOSX/arm)
 include_directories(MacOSX/arm64)
 
 function(check_certificate identity result_valid)
@@ -118,12 +119,11 @@ get_debugserver_codesign_identity(debugserver_codesign_identity)
 set(LLVM_CODESIGNING_IDENTITY ${debugserver_codesign_identity})
 
 if(APPLE)
-  set(LIBCOMPRESSION compression)
   if(APPLE_EMBEDDED)
-    find_library(BACKBOARD_LIBRARY BackBoardServices
-      PATHS ${CMAKE_OSX_SYSROOT}/System/Library/PrivateFrameworks)
-    find_library(FRONTBOARD_LIBRARY FrontBoardServices
-      PATHS ${CMAKE_OSX_SYSROOT}/System/Library/PrivateFrameworks)
+#    find_library(BACKBOARD_LIBRARY BackBoardServices
+#      PATHS ${CMAKE_OSX_SYSROOT}/System/Library/PrivateFrameworks)
+#    find_library(FRONTBOARD_LIBRARY FrontBoardServices
+#      PATHS ${CMAKE_OSX_SYSROOT}/System/Library/PrivateFrameworks)
     find_library(SPRINGBOARD_LIBRARY SpringBoardServices
       PATHS ${CMAKE_OSX_SYSROOT}/System/Library/PrivateFrameworks)
     find_library(MOBILESERVICES_LIBRARY MobileCoreServices
@@ -134,9 +134,7 @@ if(APPLE)
         PATHS ${CMAKE_OSX_SYSROOT}/System/Library/PrivateFrameworks)
     endif()
 
-    if(NOT BACKBOARD_LIBRARY)
       set(SKIP_TEST_DEBUGSERVER ON CACHE BOOL "" FORCE)
-    endif()
   endif()
 endif()
 
@@ -222,6 +220,7 @@ set(lldbDebugserverCommonSources
   MacOSX/MachVMMemory.cpp
   MacOSX/MachVMRegion.cpp
   MacOSX/OsLogger.cpp
+  MacOSX/arm/DNBArchImpl.cpp
   MacOSX/arm64/DNBArchImplARM64.cpp
   MacOSX/x86_64/DNBArchImplX86_64.cpp
   ${generated_mach_interfaces}
@@ -239,15 +238,12 @@ target_link_libraries(lldbDebugserverCommon
                       INTERFACE ${COCOA_LIBRARY}
                       ${CORE_FOUNDATION_LIBRARY}
                       ${FOUNDATION_LIBRARY}
-                      ${BACKBOARD_LIBRARY}
-                      ${FRONTBOARD_LIBRARY}
                       ${SPRINGBOARD_LIBRARY}
                       ${MOBILESERVICES_LIBRARY}
                       ${LOCKDOWN_LIBRARY}
                       ${CAROUSELSERVICES_LIBRARY}
                       ${FOUNDATION_LIBRARY}
                       ${SECURITY_LIBRARY}
-                      ${LIBCOMPRESSION}
                       ${ENERGY_LIBRARY})
 add_lldb_tool(debugserver ADD_TO_FRAMEWORK
   debugserver.cpp
@@ -286,9 +282,10 @@ set_target_properties(debugserver PROPERTIES FOLDER "lldb libraries/debugserver"
 
 if(APPLE_EMBEDDED)
   set_property(TARGET lldbDebugserverCommon APPEND PROPERTY COMPILE_DEFINITIONS
-    WITH_LOCKDOWN
-    WITH_FBS
-    WITH_BKS
+#    WITH_LOCKDOWN
+#    WITH_FBS
+#    WITH_BKS
+     WITH_SPRINGBOARD
     )
   if(CAROUSELSERVICES_LIBRARY)
     set_property(TARGET lldbDebugserverCommon APPEND PROPERTY COMPILE_DEFINITIONS
@@ -296,9 +293,10 @@ if(APPLE_EMBEDDED)
       )
   endif()
   set_property(TARGET debugserver APPEND PROPERTY COMPILE_DEFINITIONS
-    WITH_LOCKDOWN
-    WITH_FBS
-    WITH_BKS
+#    WITH_LOCKDOWN
+#    WITH_FBS
+#    WITH_BKS
+     WITH_SPRINGBOARD
     )
   set_property(TARGET lldbDebugserverCommon APPEND PROPERTY COMPILE_FLAGS
     -F${CMAKE_OSX_SYSROOT}/System/Library/PrivateFrameworks
@@ -309,8 +307,7 @@ if(APPLE_EMBEDDED)
                       INTERFACE ${COCOA_LIBRARY}
                       ${CORE_FOUNDATION_LIBRARY}
                       ${FOUNDATION_LIBRARY}
-                      ${SECURITY_LIBRARY}
-                      ${LIBCOMPRESSION})
+                      ${SECURITY_LIBRARY})
 
   add_lldb_tool(debugserver-nonui
     debugserver.cpp

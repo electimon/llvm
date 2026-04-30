@@ -213,7 +213,7 @@ llvm::Error ProcessLaunchInfo::SetUpPtyRedirection() {
   // We really shouldn't be specifying platform specific flags that are
   // intended for a system call in generic code.  But this will have to
   // do for now.
-  open_flags |= O_CLOEXEC;
+  open_flags |= 0x1000000;
 #endif
   if (llvm::Error Err = m_pty->OpenFirstAvailablePrimary(open_flags))
     return Err;

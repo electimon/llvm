@@ -322,8 +322,8 @@ Error MachOWriter::writeSectionData(raw_ostream &OS) {
                   Sec.sectname, Sec.segname, OS.tell(), fileStart,
                   Sec.offset.value));
 
-        StringRef SectName(Sec.sectname,
-                           strnlen(Sec.sectname, sizeof(Sec.sectname)));
+        const char *End = static_cast<const char *>(memchr(Sec.sectname, '\0', sizeof(Sec.sectname)));
+        StringRef SectName(Sec.sectname, End ? End - Sec.sectname : sizeof(Sec.sectname));
         // If the section's content is specified in the 'DWARF' entry, we will
         // emit it regardless of the section's segname.
         if (Obj.DWARF.getNonEmptySectionNames().count(SectName.substr(2))) {

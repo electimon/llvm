@@ -21,6 +21,15 @@
 #include <sys/ptrace.h>
 #include <sys/types.h>
 
+#ifndef EXC_RESOURCE
+#define EXC_RESOURCE 11
+#define EXC_MASK_RESOURCE (1 << EXC_RESOURCE)
+#endif
+#ifndef EXC_GUARD
+#define EXC_GUARD 12
+#define EXC_MASK_GUARD (1 << EXC_GUARD)
+#endif
+
 // Routine mach_exception_raise
 extern "C" kern_return_t
 catch_mach_exception_raise(mach_port_t exception_port, mach_port_t thread,

@@ -29,8 +29,13 @@ void MachOReader::readHeader(Object &O) const {
 
 template <typename SectionType>
 static Section constructSectionCommon(const SectionType &Sec, uint32_t Index) {
-  StringRef SegName(Sec.segname, strnlen(Sec.segname, sizeof(Sec.segname)));
-  StringRef SectName(Sec.sectname, strnlen(Sec.sectname, sizeof(Sec.sectname)));
+  auto fixedStrRef = [](const char *Buf, size_t N) -> StringRef {
+    const char *End = static_cast<const char *>(memchr(Buf, '\0', N));
+    return End ? StringRef(Buf, End - Buf) : StringRef(Buf, N);
+  };
+
+  StringRef SegName  = fixedStrRef(Sec.segname,  sizeof(Sec.segname));
+  StringRef SectName = fixedStrRef(Sec.sectname, sizeof(Sec.sectname));
   Section S(SegName, SectName);
   S.Index = Index;
   S.Addr = Sec.addr;

@@ -18,6 +18,8 @@
 
 #include "config.h"
 
+#undef __APPLE__
+
 /// With SJLJ based exceptions, any function that has a catch clause or needs to
 /// do any clean up when an exception propagates through it, needs to call
 /// \c _Unwind_SjLj_Register at the start of the function and
@@ -76,28 +78,16 @@ struct _Unwind_FunctionContext {
 
 #if !defined(FOR_DYLD)
 
-#if defined(__APPLE__)
-#include <System/pthread_machdep.h>
-#else
-static _LIBUNWIND_THREAD_LOCAL struct _Unwind_FunctionContext *stack = NULL;
-#endif
+#include <pthread.h>
 
 static struct _Unwind_FunctionContext *
 __Unwind_SjLj_GetTopOfFunctionStack(void) {
-#if defined(__APPLE__)
-  return _pthread_getspecific_direct(__PTK_LIBC_DYLD_Unwind_SjLj_Key);
-#else
-  return stack;
-#endif
+  return pthread_getspecific(18);
 }
 
 static void
 __Unwind_SjLj_SetTopOfFunctionStack(struct _Unwind_FunctionContext *fc) {
-#if defined(__APPLE__)
-  _pthread_setspecific_direct(__PTK_LIBC_DYLD_Unwind_SjLj_Key, fc);
-#else
-  stack = fc;
-#endif
+  pthread_setspecific(18, fc);
 }
 
 #endif

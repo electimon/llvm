@@ -134,7 +134,7 @@ std::string PseudoTerminal::GetSecondaryName() const {
 
 llvm::Expected<lldb::pid_t> PseudoTerminal::Fork() {
 #if LLDB_ENABLE_POSIX
-  if (llvm::Error Err = OpenFirstAvailablePrimary(O_RDWR | O_CLOEXEC))
+  if (llvm::Error Err = OpenFirstAvailablePrimary(O_RDWR | 0x1000000))
     return std::move(Err);
 
   pid_t pid = ::fork();
@@ -153,7 +153,7 @@ llvm::Expected<lldb::pid_t> PseudoTerminal::Fork() {
   if (llvm::Error Err = OpenSecondary(O_RDWR))
     return std::move(Err);
 
-  // Primary FD should have O_CLOEXEC set, but let's close it just in
+  // Primary FD should have 0x1000000 set, but let's close it just in
   // case...
   ClosePrimaryFileDescriptor();
 

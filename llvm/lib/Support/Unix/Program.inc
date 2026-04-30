@@ -42,11 +42,7 @@
 #include <TargetConditionals.h>
 #endif
 
-#if defined(__APPLE__) && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
 #define USE_NSGETENVIRON 1
-#else
-#define USE_NSGETENVIRON 0
-#endif
 
 #if !USE_NSGETENVIRON
 extern char **environ;

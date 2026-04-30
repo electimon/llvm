@@ -248,7 +248,7 @@ void HostInfoMacOSX::ComputeHostArchitectureSupport(ArchSpec &arch_32,
     len = sizeof(is_64_bit_capable);
     ::sysctlbyname("hw.cpu64bit_capable", &is_64_bit_capable, &len, NULL, 0);
 
-    if (cputype == CPU_TYPE_ARM64 && cpusubtype == CPU_SUBTYPE_ARM64E) {
+    if (cputype == CPU_TYPE_ARM64) { // && cpusubtype == CPU_SUBTYPE_ARM64E) {
       // The arm64e architecture is a preview. Pretend the host architecture
       // is arm64.
       cpusubtype = CPU_SUBTYPE_ARM64_ALL;
@@ -691,24 +691,7 @@ bool SharedCacheInfo::CreateSharedCacheInfoWithInstrospectionSPIs() {
 }
 
 SharedCacheInfo::SharedCacheInfo() {
-  if (CreateSharedCacheInfoWithInstrospectionSPIs())
-    return;
-
-  size_t shared_cache_size;
-  uint8_t *shared_cache_start =
-      _dyld_get_shared_cache_range(&shared_cache_size);
-  uuid_t dsc_uuid;
-  _dyld_get_shared_cache_uuid(dsc_uuid);
-  m_uuid = UUID(dsc_uuid);
-
-  dyld_shared_cache_iterate_text(
-      dsc_uuid, ^(const dyld_shared_cache_dylib_text_info *info) {
-        m_images[info->path] = SharedCacheImageInfo{
-            UUID(info->dylibUuid, 16),
-            std::make_shared<DataBufferUnowned>(
-                shared_cache_start + info->textSegmentOffset,
-                shared_cache_size - info->textSegmentOffset)};
-      });
+  return;
 }
 
 SharedCacheImageInfo

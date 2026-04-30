@@ -38,6 +38,8 @@
 #include <TargetConditionals.h>
 #import <Foundation/Foundation.h>
 
+#import <dispatch/dispatch.h>
+
 #include "DNBDataRef.h"
 #include "DNBLog.h"
 #include "DNBThreadResumeActions.h"
@@ -83,8 +85,7 @@
 #ifdef WITH_SPRINGBOARD
 
 #include <CoreFoundation/CoreFoundation.h>
-#include <SpringBoardServices/SBSWatchdogAssertion.h>
-#include <SpringBoardServices/SpringBoardServer.h>
+#include <SpringBoardServices/SpringBoardServices.h>
 
 #endif // WITH_SPRINGBOARD
 
@@ -98,7 +99,36 @@
 // or NULL if there was some problem getting the bundle id.
 static CFStringRef CopyBundleIDForPath(const char *app_bundle_path,
                                        DNBError &err_str);
+
+typedef enum {
+	eMachProcessFlagsNone = 0,
+	eMachProcessFlagsAttached = 1,
+	eMachProcessFlagsBoardCalculated = 2,
+	eMachProcessFlagsUsingFBS = 4,
+	eMachProcessFlagsUsingBKS = 8,
+	eMachProcessFlagsUsingSpringBoard = 16
+} e_mach_process_flags_t;
+
 #endif
+
+struct proc_bsdshortinfo {
+	uint32_t                pbsi_pid;               /* process id */
+	uint32_t                pbsi_ppid;              /* process parent id */
+	uint32_t                pbsi_pgid;              /* process perp id */
+	uint32_t                pbsi_status;            /* p_stat value, SZOMB, SRUN, etc */
+	char                    pbsi_comm[MAXCOMLEN];   /* upto 16 characters of process name */
+	uint32_t                pbsi_flags;              /* 64bit; emulated etc */
+	uid_t                   pbsi_uid;               /* current uid on process */
+	gid_t                   pbsi_gid;               /* current gid on process */
+	uid_t                   pbsi_ruid;              /* current ruid on process */
+	gid_t                   pbsi_rgid;              /* current tgid on process */
+	uid_t                   pbsi_svuid;             /* current svuid on process */
+	gid_t                   pbsi_svgid;             /* current svgid on process */
+	uint32_t                pbsi_rfu;               /* reserved for future use*/
+};
+
+#define PROC_PIDT_SHORTBSDINFO          13
+#define PROC_PIDT_SHORTBSDINFO_SIZE     (sizeof(struct proc_bsdshortinfo))
 
 #if defined(WITH_BKS) || defined(WITH_FBS)
 #import <Foundation/Foundation.h>
@@ -2604,9 +2634,9 @@ void *MachProcess::STDIOThread(void *arg) {
                    "MachProcess::%s ( arg = %p ) thread starting...",
                    __FUNCTION__, arg);
 
-#if defined(__APPLE__)
+/*#if defined(__APPLE__)
   pthread_setname_np("stdio monitoring thread");
-#endif
+#endif*/
 
   // We start use a base and more options so we can control if we
   // are currently using a timeout on the mach_msg. We do this to get a
@@ -2760,9 +2790,9 @@ void *MachProcess::ProfileThread(void *arg) {
                    "MachProcess::%s ( arg = %p ) thread starting...",
                    __FUNCTION__, arg);
 
-#if defined(__APPLE__)
+/*#if defined(__APPLE__)
   pthread_setname_np("performance profiling thread");
-#endif
+#endif*/
 
   while (proc->IsProfilingEnabled()) {
     nub_state_t state = proc->GetState();
@@ -2897,19 +2927,15 @@ MachProcess::GetGenealogyImageInfo(size_t idx) {
 
 bool MachProcess::GetOSVersionNumbers(uint64_t *major, uint64_t *minor,
                                       uint64_t *patch) {
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
-  NSOperatingSystemVersion vers =
-      [[NSProcessInfo processInfo] operatingSystemVersion];
-  if (major)
-    *major = vers.majorVersion;
-  if (minor)
-    *minor = vers.minorVersion;
-  if (patch)
-    *patch = vers.patchVersion;
-
-  [pool drain];
-
+  char osversion[32] = {};
+  size_t len = sizeof(osversion);
+  if (sysctlbyname("kern.osrelease", osversion, &len, nullptr, 0) != 0)
+    return false;
+  unsigned mj = 0, mn = 0, pt = 0;
+  sscanf(osversion, "%u.%u.%u", &mj, &mn, &pt);
+  if (major) *major = mj;
+  if (minor) *minor = mn;
+  if (patch) *patch = pt;
   return true;
 }
 
@@ -3218,7 +3244,7 @@ const void *MachProcess::PrepareForAttach(const char *path,
         NULL,           // launch_argv.get(),
         NULL,           // launch_envp.get(),  // CFDictionaryRef environment
         stdio_path.get(), stdio_path.get(),
-        SBSApplicationDebugOnNextLaunch | SBSApplicationLaunchWaitForDebugger);
+        SBSApplicationDebugOnNextLaunch_plus_SBSApplicationLaunchWaitForDebugger);
 
     if (sbs_error != SBSApplicationLaunchErrorSuccess) {
       attach_err.SetError(sbs_error, DNBError::SpringBoard);
@@ -3319,7 +3345,7 @@ void MachProcess::CleanupAfterAttach(const void *attach_token,
 #if defined(WITH_SPRINGBOARD)
   // Tell SpringBoard to cancel the debug on next launch of this application
   // if we failed to attach
-  if (launch_flavor == eMachProcessFlagsUsingSpringBoard) {
+  if (launch_flavor == eLaunchFlavorSpringBoard) {
     if (!success) {
       SBSApplicationLaunchError sbs_error = 0;
       CFStringRef bundleIDCFStr = (CFStringRef)attach_token;
@@ -3850,9 +3876,8 @@ pid_t MachProcess::SBLaunchForDebug(const char *path, char const *argv[],
       DNBLogThreadedIf(LOG_PROCESS, "successfully attached to pid %d", m_pid);
     } else {
       launch_err.SetErrorString(
-          "Failed to attach to pid %d, SBLaunchForDebug() unable to "
-          "ptrace(PT_ATTACHEXC)",
-          m_pid);
+          "Failed to attach to pid SBLaunchForDebug() unable to "
+          "ptrace(PT_ATTACHEXC)");
       SetState(eStateExited);
       DNBLogThreadedIf(LOG_PROCESS, "error: failed to attach to pid %d", m_pid);
     }
@@ -3860,7 +3885,7 @@ pid_t MachProcess::SBLaunchForDebug(const char *path, char const *argv[],
   return m_pid;
 }
 
-#include <servers/bootstrap.h>
+//#include <servers/bootstrap.h>
 
 pid_t MachProcess::SBForkChildForPTraceDebugging(
     const char *app_bundle_path, char const *argv[], char const *envp[],
@@ -4416,6 +4441,11 @@ bool MachProcess::ProcessUsingBackBoard() {
 bool MachProcess::ProcessUsingFrontBoard() {
   CalculateBoardStatus();
   return (m_flags & eMachProcessFlagsUsingFBS) != 0;
+}
+
+bool MachProcess::ProcessUsingSpringBoard() {
+  CalculateBoardStatus();
+  return (m_flags & 16) != 0;
 }
 
 int MachProcess::GetInferiorAddrSize(pid_t pid) {

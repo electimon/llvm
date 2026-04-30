@@ -155,11 +155,11 @@ std::optional<StringRef> HeaderMapImpl::getString(unsigned StrTabIdx) const {
 
   const char *Data = FileBuffer->getBufferStart() + StrTabIdx;
   unsigned MaxLen = FileBuffer->getBufferSize() - StrTabIdx;
-  unsigned Len = strnlen(Data, MaxLen);
 
-  // Check whether the buffer is null-terminated.
-  if (Len == MaxLen && Data[Len - 1])
+  const char *End = static_cast<const char *>(memchr(Data, '\0', MaxLen));
+  if (!End)
     return std::nullopt;
+  unsigned Len = End - Data;
 
   return StringRef(Data, Len);
 }

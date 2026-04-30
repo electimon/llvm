@@ -8,7 +8,7 @@
 
 #include "ObjectContainerBSDArchive.h"
 
-#if defined(_WIN32) || defined(_AIX)
+//#if defined(_WIN32) || defined(_AIX)
 // Defines from ar, missing on Windows
 #define SARMAG 8
 #define ARFMAG "`\n"
@@ -21,9 +21,9 @@ typedef struct ar_hdr {
   char ar_size[10];
   char ar_fmag[2];
 } ar_hdr;
-#else
-#include <ar.h>
-#endif
+//#else
+//#include <ar.h>
+//#endif
 
 #include "lldb/Core/Module.h"
 #include "lldb/Core/ModuleSpec.h"

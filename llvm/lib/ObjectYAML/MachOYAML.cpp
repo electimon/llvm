@@ -36,8 +36,8 @@ namespace yaml {
 
 void ScalarTraits<char_16>::output(const char_16 &Val, void *,
                                    raw_ostream &Out) {
-  auto Len = strnlen(&Val[0], 16);
-  Out << StringRef(&Val[0], Len);
+  const char *End = static_cast<const char *>(memchr(&Val[0], '\0', 16));
+  Out << StringRef(&Val[0], End ? End - &Val[0] : 16);
 }
 
 StringRef ScalarTraits<char_16>::input(StringRef Scalar, void *, char_16 &Val) {

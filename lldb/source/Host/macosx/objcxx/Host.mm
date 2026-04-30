@@ -82,43 +82,28 @@
 #include "../cfcpp/CFCString.h"
 
 #include <objc/objc-auto.h>
-#include <os/log.h>
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <Foundation/Foundation.h>
+
+#include <dispatch/dispatch.h>
 
 #ifndef _POSIX_SPAWN_DISABLE_ASLR
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 #endif
 
-extern "C" {
-int __pthread_chdir(const char *path);
-int __pthread_fchdir(int fildes);
+extern "C" int __pthread_chdir(const char *path) {
+    return syscall(348, path);
+}
+extern "C" int __pthread_fchdir(int fd) {
+    return syscall(349, fd);
 }
 
 using namespace lldb;
 using namespace lldb_private;
 
-static os_log_t g_os_log;
-static std::once_flag g_os_log_once;
-
 void Host::SystemLog(Severity severity, llvm::StringRef message) {
-  if (__builtin_available(macos 10.12, iOS 10, tvOS 10, watchOS 3, *)) {
-    std::call_once(g_os_log_once, []() {
-      g_os_log = os_log_create("com.apple.dt.lldb", "lldb");
-    });
-    switch (severity) {
-    case lldb::eSeverityInfo:
-    case lldb::eSeverityWarning:
-      os_log(g_os_log, "%{public}s", message.str().c_str());
-      break;
-    case lldb::eSeverityError:
-      os_log_error(g_os_log, "%{public}s", message.str().c_str());
-      break;
-    }
-  } else {
     llvm::errs() << message;
-  }
 }
 
 bool Host::GetBundleDirectory(const FileSpec &file,
@@ -159,6 +144,7 @@ bool Host::ResolveExecutableInBundle(FileSpec &file) {
   return false;
 }
 
+/*
 #if TARGET_OS_OSX
 
 static void *AcceptPIDFromInferior(const char *connect_url) {
@@ -334,14 +320,15 @@ LaunchInNewTerminalWithAppleScript(const char *exe_path,
 }
 
 #endif // TARGET_OS_OSX
+*/
 
 llvm::Error Host::OpenFileInExternalEditor(llvm::StringRef editor,
                                            const FileSpec &file_spec,
                                            uint32_t line_no) {
-#if !TARGET_OS_OSX
+//#if !TARGET_OS_OSX
   return llvm::errorCodeToError(
       std::error_code(ENOTSUP, std::system_category()));
-#else // !TARGET_OS_OSX
+/*#else
   Log *log = GetLog(LLDBLog::Host);
 
   const std::string file_path = file_spec.GetPath();
@@ -355,17 +342,16 @@ llvm::Error Host::OpenFileInExternalEditor(llvm::StringRef editor,
 
   CFCString file_cfstr(file_path.c_str(), kCFStringEncodingUTF8);
   CFCReleaser<CFURLRef> file_URL = ::CFURLCreateWithFileSystemPath(
-      /*allocator=*/NULL,
-      /*filePath*/ file_cfstr.get(),
-      /*pathStyle=*/kCFURLPOSIXPathStyle,
-      /*isDirectory=*/false);
+      NULL,
+      file_cfstr.get(),
+      kCFURLPOSIXPathStyle,
+      false);
 
   if (!file_URL.get())
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         llvm::formatv("could not create CFURL from path \"{0}\"", file_path));
 
-  // Create a new Apple Event descriptor.
   typedef struct {
     int16_t reserved0; // must be zero
     int16_t fLineNumber;
@@ -375,7 +361,6 @@ llvm::Error Host::OpenFileInExternalEditor(llvm::StringRef editor,
     uint32_t reserved2; // must be zero
   } BabelAESelInfo;
 
-  // We attach this to an 'odoc' event to specify a particular selection.
   BabelAESelInfo file_and_line_info = {
       0,                      // reserved0
       (int16_t)(line_no - 1), // fLineNumber (zero based line number)
@@ -387,10 +372,10 @@ llvm::Error Host::OpenFileInExternalEditor(llvm::StringRef editor,
 
   AEKeyDesc file_and_line_desc;
   file_and_line_desc.descKey = keyAEPosition;
-  long error = ::AECreateDesc(/*typeCode=*/typeUTF8Text,
-                              /*dataPtr=*/&file_and_line_info,
-                              /*dataSize=*/sizeof(file_and_line_info),
-                              /*result=*/&(file_and_line_desc.descContent));
+  long error = ::AECreateDesc(typeUTF8Text,
+                              &file_and_line_info,
+                              sizeof(file_and_line_info),
+                              &(file_and_line_desc.descContent));
 
   if (error != noErr)
     return llvm::createStringError(
@@ -414,9 +399,9 @@ llvm::Error Host::OpenFileInExternalEditor(llvm::StringRef editor,
     app_fsref.emplace();
     CFCString editor_name(editor.data(), kCFStringEncodingUTF8);
     long app_error = ::LSFindApplicationForInfo(
-        /*inCreator=*/kLSUnknownCreator, /*inBundleID=*/NULL,
-        /*inName=*/editor_name.get(), /*outAppRef=*/&(*app_fsref),
-        /*outAppURL=*/NULL);
+        kLSUnknownCreator, NULL,
+        editor_name.get(), &(*app_fsref),
+        NULL);
     if (app_error != noErr)
       return llvm::createStringError(
           llvm::inconvertibleErrorCode(),
@@ -436,12 +421,12 @@ llvm::Error Host::OpenFileInExternalEditor(llvm::StringRef editor,
   ProcessSerialNumber psn;
   std::array<CFURLRef, 1> file_array = {file_URL.get()};
   CFCReleaser<CFArrayRef> cf_array(
-      CFArrayCreate(/*allocator=*/NULL, /*values=*/(const void **)&file_array,
-                    /*numValues*/ 1, /*callBacks=*/NULL));
+      CFArrayCreate(NULL, (const void **)&file_array,
+                     1, NULL));
   error = ::LSOpenURLsWithRole(
-      /*inURLs=*/cf_array.get(), /*inRole=*/kLSRolesEditor,
-      /*inAEParam=*/&file_and_line_desc,
-      /*inAppParams=*/&app_params, /*outPSNs=*/&psn, /*inMaxPSNCount=*/1);
+      cf_array.get(), kLSRolesEditor,
+      &file_and_line_desc,
+      &app_params, &psn, 1);
 
   if (error != noErr)
     return llvm::createStringError(
@@ -449,17 +434,17 @@ llvm::Error Host::OpenFileInExternalEditor(llvm::StringRef editor,
         llvm::formatv("LSOpenURLsWithRole failed: error {0}", error));
 
   return llvm::Error::success();
-#endif // TARGET_OS_OSX
+#endif*/ // TARGET_OS_OSX
 }
 
 bool Host::IsInteractiveGraphicSession() {
-#if !TARGET_OS_OSX
+//#if !TARGET_OS_OSX
   return false;
-#else
+/*#else
   auditinfo_addr_t info;
   getaudit_addr(&info, sizeof(info));
   return info.ai_flags & AU_SESSION_FLAG_HAS_GRAPHIC_ACCESS;
-#endif
+#endif*/
 }
 
 Environment Host::GetEnvironment() { return Environment(*_NSGetEnviron()); }
@@ -742,7 +727,7 @@ bool Host::GetProcessInfo(lldb::pid_t pid, ProcessInstanceInfo &process_info) {
   process_info.Clear();
   return false;
 }
-
+/*
 #if TARGET_OS_OSX
 static void PackageXPCArguments(xpc_object_t message, const char *prefix,
                                 const Args &args) {
@@ -769,12 +754,6 @@ static void PackageXPCEnvironment(xpc_object_t message, llvm::StringRef prefix,
   }
 }
 
-/*
- A valid authorizationRef means that
-    - there is the LaunchUsingXPCRightName rights in the /etc/authorization
-    - we have successfully copied the rights to be send over the XPC wire
- Once obtained, it will be valid for as long as the process lives.
- */
 static AuthorizationRef authorizationRef = NULL;
 static Status getXPCAuthorization(ProcessLaunchInfo &launch_info) {
   Status error;
@@ -852,7 +831,7 @@ static Status getXPCAuthorization(ProcessLaunchInfo &launch_info) {
   return error;
 }
 #endif
-
+*/
 static short GetPosixspawnFlags(const ProcessLaunchInfo &launch_info) {
   short flags = POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK;
 
@@ -891,14 +870,14 @@ static short GetPosixspawnFlags(const ProcessLaunchInfo &launch_info) {
   return flags;
 }
 
-static void finalize_xpc(void *xpc_object) {
+/*static void finalize_xpc(void *xpc_object) {
   xpc_release((xpc_object_t)xpc_object);
-}
+}*/
 
 static Status LaunchProcessXPC(const char *exe_path,
                                ProcessLaunchInfo &launch_info,
                                lldb::pid_t &pid) {
-#if TARGET_OS_OSX
+/*#if TARGET_OS_OSX
   Status error = getXPCAuthorization(launch_info);
   if (error.Fail())
     return error;
@@ -1026,10 +1005,10 @@ static Status LaunchProcessXPC(const char *exe_path,
   }
 
   return error;
-#else
+#else*/
   Status error;
   return error;
-#endif
+//#endif
 }
 
 static bool AddPosixSpawnFileAction(void *_file_actions, const FileAction *info,
@@ -1146,14 +1125,14 @@ static Status LaunchProcessPosixSpawn(const char *exe_path,
 
   bool is_graphical = true;
 
-#if TARGET_OS_OSX
+/*#if TARGET_OS_OSX
   SecuritySessionId session_id;
   SessionAttributeBits session_attributes;
   OSStatus status =
       SessionGetInfo(callerSecuritySession, &session_id, &session_attributes);
   if (status == errSessionSuccess)
     is_graphical = session_attributes & sessionHasGraphicAccess;
-#endif
+#endif*/
 
   //  When lldb is ran through a graphical session, make the debuggee process
   //  responsible for its own TCC permissions instead of inheriting them from
@@ -1325,7 +1304,7 @@ static Status LaunchProcessPosixSpawn(const char *exe_path,
 static bool ShouldLaunchUsingXPC(ProcessLaunchInfo &launch_info) {
   bool result = false;
 
-#if TARGET_OS_OSX
+/*#if TARGET_OS_OSX
   bool launchingAsRoot = launch_info.GetUserID() == 0;
   bool currentUserIsRoot = HostInfo::GetEffectiveUserID() == 0;
 
@@ -1333,7 +1312,7 @@ static bool ShouldLaunchUsingXPC(ProcessLaunchInfo &launch_info) {
     // If current user is already root, we don't need XPC's help.
     result = true;
   }
-#endif
+#endif*/
 
   return result;
 }
@@ -1357,15 +1336,15 @@ Status Host::LaunchProcess(ProcessLaunchInfo &launch_info) {
   }
 
   if (launch_info.GetFlags().Test(eLaunchFlagLaunchInTTY)) {
-#if TARGET_OS_OSX
+/*#if TARGET_OS_OSX
     return LaunchInNewTerminalWithAppleScript(exe_spec.GetPath().c_str(),
                                               launch_info);
-#else
+#else*/
     error =
         Status::FromErrorString("launching a process in a new terminal is not "
                                 "supported on iOS devices");
     return error;
-#endif
+//#endif
   }
 
   lldb::pid_t pid = LLDB_INVALID_PROCESS_ID;
@@ -1503,58 +1482,60 @@ Status Host::ShellExpandArguments(ProcessLaunchInfo &launch_info) {
   return error;
 }
 
+#include <thread>
+
 llvm::Expected<HostThread> Host::StartMonitoringChildProcess(
     const Host::MonitorChildProcessCallback &callback, lldb::pid_t pid) {
-  unsigned long mask = DISPATCH_PROC_EXIT;
+    unsigned long mask = DISPATCH_PROC_EXIT;
+//    if (monitor_signals)
+//        mask |= DISPATCH_PROC_SIGNAL;
+    std::thread GrimReaper([pid, callback]() {
+        int status= 0;
+        int wait_pid = 0;
+        bool cancel = false;
+        bool exited = false;
+        while(!exited)
+        {
+            do
+            {
+                wait_pid = ::waitpid (pid, &status, 0);
+            } while (wait_pid < 0 && errno == EINTR);
 
-  Log *log(GetLog(LLDBLog::Host | LLDBLog::Process));
+            if (wait_pid >= 0)
+            {
+                int signal = 0;
+                int exit_status = 0;
+                const char *status_cstr = NULL;
+                if (WIFSTOPPED(status))
+                {
+                    signal = WSTOPSIG(status);
+                    status_cstr = "STOPPED";
+                }
+                else if (WIFEXITED(status))
+                {
+                    exit_status = WEXITSTATUS(status);
+                    status_cstr = "EXITED";
+                    exited = true;
+                }
+                else if (WIFSIGNALED(status))
+                {
+                    signal = WTERMSIG(status);
+                    status_cstr = "SIGNALED";
+                    exited = true;
+                    exit_status = -1;
+                }
+                else
+                {
+                    status_cstr = "???";
+                }
 
-  dispatch_source_t source = ::dispatch_source_create(
-      DISPATCH_SOURCE_TYPE_PROC, pid, mask,
-      ::dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0));
-
-  LLDB_LOGF(log,
-            "Host::StartMonitoringChildProcess(callback, pid=%i) source = %p\n",
-            static_cast<int>(pid), static_cast<void *>(source));
-
-  if (source) {
-    Host::MonitorChildProcessCallback callback_copy = callback;
-    ::dispatch_source_set_cancel_handler(source, ^{
-      dispatch_release(source);
-    });
-    ::dispatch_source_set_event_handler(source, ^{
-
-      int status = 0;
-      int wait_pid = 0;
-      wait_pid = llvm::sys::RetryAfterSignal(-1, ::waitpid, pid, &status, 0);
-      if (wait_pid >= 0) {
-        int signal = 0;
-        int exit_status = 0;
-        const char *status_cstr = NULL;
-        if (WIFEXITED(status)) {
-          exit_status = WEXITSTATUS(status);
-          status_cstr = "EXITED";
-        } else if (WIFSIGNALED(status)) {
-          signal = WTERMSIG(status);
-          status_cstr = "SIGNALED";
-          exit_status = -1;
-        } else {
-          llvm_unreachable("Unknown status");
+                if (callback)
+                    callback (pid, signal, exit_status);
+            }
         }
-
-        LLDB_LOGF(log,
-                  "::waitpid (pid = %llu, &status, 0) => pid = %i, status "
-                  "= 0x%8.8x (%s), signal = %i, exit_status = %i",
-                  pid, wait_pid, status, status_cstr, signal, exit_status);
-
-        if (callback_copy)
-          callback_copy(pid, signal, exit_status);
-
-        ::dispatch_source_cancel(source);
-      }
     });
-
-    ::dispatch_resume(source);
-  }
-  return HostThread();
+    
+    GrimReaper.detach();
+    
+    return HostThread();
 }

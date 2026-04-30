@@ -4777,11 +4777,13 @@ template <class ELFT> void GNUELFDumper<ELFT>::printProgramHeaders() {
       const char *Data =
           reinterpret_cast<const char *>(this->Obj.base()) + Phdr.p_offset;
       size_t MaxSize = this->Obj.getBufSize() - Phdr.p_offset;
-      size_t Len = strnlen(Data, MaxSize);
-      if (Len == MaxSize) {
+      const char *End = static_cast<const char *>(memchr(Data, '\0', MaxSize));
+      if (!End) {
         ReportBadInterp("it is not null-terminated");
         continue;
       }
+
+      size_t Len = End - Data;
 
       OS << "      [Requesting program interpreter: ";
       OS << StringRef(Data, Len) << "]";

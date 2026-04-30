@@ -130,11 +130,63 @@ static system_clock::time_point __libcpp_system_clock_now() {
 
 #elif defined(_LIBCPP_HAS_CLOCK_GETTIME)
 
-static system_clock::time_point __libcpp_system_clock_now() {
-  struct timespec tp;
-  if (0 != clock_gettime(CLOCK_REALTIME, &tp))
-    __throw_system_error(errno, "clock_gettime(CLOCK_REALTIME) failed");
-  return system_clock::time_point(seconds(tp.tv_sec) + microseconds(tp.tv_nsec / 1000));
+//   mach_absolute_time() * MachInfo.numer / MachInfo.denom is the number of
+//   nanoseconds since the computer booted up.  MachInfo.numer and MachInfo.denom
+//   are run time constants supplied by the OS.  This clock has no relationship
+//   to the Gregorian calendar.  It's main use is as a high resolution timer.
+
+// MachInfo.numer / MachInfo.denom is often 1 on the latest equipment.  Specialize
+//   for that case as an optimization.
+
+static
+steady_clock::rep
+steady_simplified()
+{
+    return static_cast<steady_clock::rep>(mach_absolute_time());
+}
+
+static
+double
+compute_steady_factor()
+{
+    mach_timebase_info_data_t MachInfo;
+    mach_timebase_info(&MachInfo);
+    return static_cast<double>(MachInfo.numer) / MachInfo.denom;
+}
+
+static
+steady_clock::rep
+steady_full()
+{
+    static const double factor = compute_steady_factor();
+    return static_cast<steady_clock::rep>(mach_absolute_time() * factor);
+}
+
+typedef steady_clock::rep (*FP)();
+
+static
+FP
+init_steady_clock()
+{
+    mach_timebase_info_data_t MachInfo;
+    mach_timebase_info(&MachInfo);
+    if (MachInfo.numer == MachInfo.denom)
+        return &steady_simplified;
+    return &steady_full;
+}
+
+system_clock::time_point
+system_clock::now() _NOEXCEPT
+{
+    static FP fp = init_steady_clock();
+    return  system_clock::time_point(duration(fp()));
+}
+
+steady_clock::time_point
+steady_clock::now() _NOEXCEPT
+{
+    static FP fp = init_steady_clock();
+    return time_point(duration(fp()));
 }
 
 #else
@@ -151,8 +203,6 @@ _LIBCPP_DIAGNOSTIC_PUSH
 _LIBCPP_CLANG_DIAGNOSTIC_IGNORED("-Wdeprecated")
 const bool system_clock::is_steady;
 _LIBCPP_DIAGNOSTIC_POP
-
-system_clock::time_point system_clock::now() noexcept { return __libcpp_system_clock_now(); }
 
 time_t system_clock::to_time_t(const time_point& t) noexcept {
   return time_t(duration_cast<seconds>(t.time_since_epoch()).count());
@@ -177,12 +227,6 @@ system_clock::time_point system_clock::from_time_t(time_t t) noexcept { return s
 // Furthermore, only CLOCK_MONOTONIC_RAW is truly monotonic, because it
 // also counts cycles when the system is asleep. Thus, it is the only
 // acceptable implementation of steady_clock.
-static steady_clock::time_point __libcpp_steady_clock_now() {
-  struct timespec tp;
-  if (0 != clock_gettime(CLOCK_MONOTONIC_RAW, &tp))
-    __throw_system_error(errno, "clock_gettime(CLOCK_MONOTONIC_RAW) failed");
-  return steady_clock::time_point(seconds(tp.tv_sec) + nanoseconds(tp.tv_nsec));
-}
 
 #  elif defined(_LIBCPP_WIN32API)
 
@@ -255,8 +299,6 @@ _LIBCPP_DIAGNOSTIC_PUSH
 _LIBCPP_CLANG_DIAGNOSTIC_IGNORED("-Wdeprecated")
 const bool steady_clock::is_steady;
 _LIBCPP_DIAGNOSTIC_POP
-
-steady_clock::time_point steady_clock::now() noexcept { return __libcpp_steady_clock_now(); }
 
 #endif // _LIBCPP_HAS_MONOTONIC_CLOCK
 

@@ -144,7 +144,8 @@ public:
 #ifdef WITH_SPRINGBOARD
   pid_t SBLaunchForDebug(const char *app_bundle_path, char const *argv[],
                          char const *envp[], bool no_stdio, bool disable_aslr,
-                         bool unmask_signals, DNBError &launch_err);
+                         const RNBContext::IgnoredExceptions &ignored_exceptions,
+                         DNBError &launch_err);
   static pid_t SBForkChildForPTraceDebugging(const char *path,
                                              char const *argv[],
                                              char const *envp[], bool no_stdio,
@@ -356,6 +357,8 @@ public:
   void CalculateBoardStatus();
 
   bool ProcessUsingBackBoard();
+
+  bool ProcessUsingSpringBoard();
 
   bool ProcessUsingFrontBoard();
 

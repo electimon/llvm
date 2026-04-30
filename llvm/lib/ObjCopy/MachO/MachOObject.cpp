@@ -215,8 +215,9 @@ LoadCommand &Object::addSegment(StringRef SegName, uint64_t SegVMSize) {
 
 /// Extracts a segment name from a string which is possibly non-null-terminated.
 static StringRef extractSegmentName(const char *SegName) {
-  return StringRef(SegName,
-                   strnlen(SegName, sizeof(MachO::segment_command::segname)));
+  constexpr size_t N = sizeof(MachO::segment_command::segname);
+  const char *End = static_cast<const char *>(memchr(SegName, '\0', N));
+  return StringRef(SegName, End ? End - SegName : N);
 }
 
 std::optional<StringRef> LoadCommand::getSegmentName() const {

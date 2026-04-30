@@ -933,7 +933,8 @@ llvm::Error ProcessElfCore::parseLinuxNotes(llvm::ArrayRef<CoreNote> notes) {
       Status status = prpsinfo.Parse(note.data, arch);
       if (status.Fail())
         return status.ToError();
-      thread_data.name.assign (prpsinfo.pr_fname, strnlen (prpsinfo.pr_fname, sizeof (prpsinfo.pr_fname)));
+      const char *End = static_cast<const char *>(memchr(prpsinfo.pr_fname, '\0', sizeof(prpsinfo.pr_fname)));
+      thread_data.name.assign(prpsinfo.pr_fname, End ? End - prpsinfo.pr_fname : sizeof(prpsinfo.pr_fname));
       SetID(prpsinfo.pr_pid);
       break;
     }

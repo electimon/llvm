@@ -8,7 +8,7 @@
 #ifndef LLDB_TOOLS_DEBUGSERVER_SOURCE_MACOSX_GENEALOGYSPI_H
 #define LLDB_TOOLS_DEBUGSERVER_SOURCE_MACOSX_GENEALOGYSPI_H
 
-#include <xpc/xpc.h>
+//#include <xpc/xpc.h>
 
 typedef void *os_activity_process_list_t;
 typedef void *os_activity_list_t;
@@ -30,7 +30,7 @@ typedef struct os_trace_message_s {
   uint64_t thread;
   uint64_t timestamp;
   uint32_t offset;
-  xpc_object_t __unsafe_unretained payload;
+  void* __unsafe_unretained payload;
   const uint8_t *image_uuid;
   const char *image_path;
   const char *format;

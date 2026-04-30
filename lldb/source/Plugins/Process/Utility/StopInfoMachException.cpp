@@ -549,7 +549,7 @@ StopInfoMachException::MachException::Name(exception_type_t exc_type) {
   case EXC_CRASH:
     return "EXC_CRASH";
 #endif
-  case EXC_RESOURCE:
+  case 11:
     return "EXC_RESOURCE";
 #ifdef EXC_GUARD
   case EXC_GUARD:
@@ -584,7 +584,7 @@ StopInfoMachException::MachException::ExceptionCode(const char *name) {
 #ifdef EXC_CRASH
       .Case("EXC_CRASH", EXC_CRASH)
 #endif
-      .Case("EXC_RESOURCE", EXC_RESOURCE)
+      .Case("EXC_RESOURCE", 11)
 #ifdef EXC_GUARD
       .Case("EXC_GUARD", EXC_GUARD)
 #endif
