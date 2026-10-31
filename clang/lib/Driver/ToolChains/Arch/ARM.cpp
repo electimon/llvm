@@ -489,6 +489,11 @@ arm::FloatABI arm::getDefaultFloatABI(const llvm::Triple &Triple) {
   case llvm::Triple::Fuchsia:
     return FloatABI::Hard;
 
+  case llvm::Triple::QNX:
+    // https://get.qnx.com/developers/docs/6.5.0SP1.update/com.qnx.doc.neutrino_technotes/vector_floating_point.html
+    // apparently we are always softfp :D
+    return FloatABI::SoftFP;
+
   default:
     if (Triple.isOHOSFamily())
       return FloatABI::Soft;

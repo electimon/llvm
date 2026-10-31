@@ -1095,6 +1095,7 @@ static void InitializePredefinedMacros(const TargetInfo &TI,
   } else {
     Builder.defineMacro("__BYTE_ORDER__", "__ORDER_LITTLE_ENDIAN__");
     Builder.defineMacro("__LITTLE_ENDIAN__");
+    Builder.defineMacro("__LITTLEENDIAN__"); // lil hack just 4 me <3
   }
 
   if (TI.getPointerWidth(LangAS::Default) == 64 && TI.getLongWidth() == 64 &&

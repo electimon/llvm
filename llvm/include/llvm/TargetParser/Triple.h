@@ -351,7 +351,8 @@ public:
     Firmware,
     QURT,
     H2,
-    LastOSType = H2
+    QNX,
+    LastOSType = QNX
   };
   enum EnvironmentType {
     UnknownEnvironment,
@@ -862,6 +863,8 @@ public:
 
   /// Tests whether the OS is H2.
   bool isOSH2() const { return getOS() == Triple::H2; }
+
+  bool isOSQNX() const { return getOS() == Triple::QNX; }
 
   /// Tests whether the OS uses the ELF binary format.
   bool isOSBinFormatELF() const { return getObjectFormat() == Triple::ELF; }

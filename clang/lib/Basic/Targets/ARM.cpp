@@ -696,6 +696,7 @@ void ARMTargetInfo::getTargetDefines(const LangOptions &Opts,
   // Target identification.
   Builder.defineMacro("__arm");
   Builder.defineMacro("__arm__");
+  Builder.defineMacro("__ARM__"); // qnx headers be dammed
   // For bare-metal none-eabi.
   if (getTriple().getOS() == llvm::Triple::UnknownOS &&
       (getTriple().getEnvironment() == llvm::Triple::EABI ||

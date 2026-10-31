@@ -1164,6 +1164,27 @@ public:
   }
 };
 
+// QNX target
+template <typename Target>
+class LLVM_LIBRARY_VISIBILITY QNXTargetInfo : public OSTargetInfo<Target> {
+protected:
+  void getOSDefines(const LangOptions &Opts, const llvm::Triple &Triple,
+                    MacroBuilder &Builder) const override {
+    Builder.defineMacro("__QNX__");
+// i should adjust the triple to account for this?
+// maybe... but qnx <4 is over 30 years by this point no?
+// where do you find non neutrino qnx? whatever...
+    Builder.defineMacro("__QNXNTO__");
+    DefineStd(Builder, "unix", Opts);
+  }
+
+public:
+  QNXTargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+      : OSTargetInfo<Target>(Triple, Opts) {
+    this->WIntType = TargetInfo::UnsignedInt;
+  }
+};
+
 } // namespace targets
 } // namespace clang
 #endif // LLVM_CLANG_LIB_BASIC_TARGETS_OSTARGETS_H
