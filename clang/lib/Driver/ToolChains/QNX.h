@@ -46,11 +46,11 @@ public:
                             llvm::opt::ArgStringList &CC1Args) const override;
 
   RuntimeLibType GetDefaultRuntimeLibType() const override {
-    return ToolChain::RLT_CompilerRT;
+    return ToolChain::RLT_Libgcc;
   }
 
   CXXStdlibType GetDefaultCXXStdlibType() const override {
-    return ToolChain::CST_Libcxx;
+    return ToolChain::CST_Libstdcxx;
   }
 
   const char *getDefaultLinker() const override { return "ld.lld"; }
@@ -59,7 +59,7 @@ public:
     return "/usr/lib/ldqnx.so.2";
   }
 
-  bool HasNativeLLVMSupport() const override { return true; }
+  bool HasNativeLLVMSupport() const override { return false; }
 
   bool isPICDefault() const override { return true; }
   bool isPIEDefault(const llvm::opt::ArgList &) const override { return true; }
@@ -72,12 +72,12 @@ public:
 
   UnwindTableLevel
   getDefaultUnwindTableLevel(const llvm::opt::ArgList &Args) const override {
-    return UnwindTableLevel::Asynchronous;
+    return UnwindTableLevel::Synchronous;
   }
 
   LangOptions::StackProtectorMode
   GetDefaultStackProtectorLevel(bool KernelOrKext) const override {
-    return LangOptions::SSPStrong;
+    return LangOptions::SSPOff;
   }
 
 protected:

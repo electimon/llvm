@@ -33,7 +33,7 @@ void tools::qnx::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   const bool IsStatic =
       Args.hasArg(options::OPT_static) && !Args.hasArg(options::OPT_static_pie);
   const bool IsStaticPIE = Args.hasArg(options::OPT_static_pie);
-  const bool IsPie = Args.hasArg(options::OPT_pie);
+  const bool IsPie = !Args.hasArg(options::OPT_no_pie);
   ArgStringList CmdArgs;
 
   if (!D.SysRoot.empty())
@@ -54,10 +54,7 @@ void tools::qnx::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     if (Args.hasArg(options::OPT_rdynamic))
       CmdArgs.push_back("-export-dynamic");
     if (!IsShared) {
-      Arg *A = Args.getLastArg(options::OPT_pie, options::OPT_no_pie);
-      bool IsPIE =
-          A ? A->getOption().matches(options::OPT_pie) : TC.isPIEDefault(Args);
-      if (IsPIE)
+      if (IsPie)
         CmdArgs.push_back("-pie");
       CmdArgs.push_back("-dynamic-linker");
       CmdArgs.push_back(Args.MakeArgString(TC.getDynamicLinker(Args)));
@@ -72,8 +69,8 @@ void tools::qnx::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back(Output.getFilename());
   }
 
-  CmdArgs.push_back("-z");
-  CmdArgs.push_back("pack-relative-relocs");
+//  CmdArgs.push_back("-z");
+//  CmdArgs.push_back("pack-relative-relocs");
 
   bool HasNoStdLib = Args.hasArg(options::OPT_nostdlib, options::OPT_r);
   bool HasNoStdLibXX = Args.hasArg(options::OPT_nostdlibxx);
