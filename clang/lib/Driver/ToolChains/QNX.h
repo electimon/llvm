@@ -46,11 +46,11 @@ public:
                             llvm::opt::ArgStringList &CC1Args) const override;
 
   RuntimeLibType GetDefaultRuntimeLibType() const override {
-    return ToolChain::RLT_Libgcc;
+    return ToolChain::RLT_CompilerRT;
   }
 
   CXXStdlibType GetDefaultCXXStdlibType() const override {
-    return ToolChain::CST_Libstdcxx;
+    return ToolChain::CST_Libcxx;
   }
 
   const char *getDefaultLinker() const override { return "ld.lld"; }

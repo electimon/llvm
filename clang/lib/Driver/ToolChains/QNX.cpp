@@ -33,7 +33,8 @@ void tools::qnx::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   const bool IsStatic =
       Args.hasArg(options::OPT_static) && !Args.hasArg(options::OPT_static_pie);
   const bool IsStaticPIE = Args.hasArg(options::OPT_static_pie);
-  const bool IsPie = !Args.hasArg(options::OPT_no_pie);
+//  const bool IsPie = !Args.hasArg(options::OPT_no_pie);
+  const bool IsPie = Args.hasArg(options::OPT_pie); // sorry... it doesnt work right now
   ArgStringList CmdArgs;
 
   if (!D.SysRoot.empty())

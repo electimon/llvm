@@ -276,7 +276,7 @@ using fs_time = time_util<file_time_type, time_t, TimeSpec>;
 #if defined(__APPLE__)
 inline TimeSpec extract_mtime(StatT const& st) { return st.st_mtimespec; }
 inline TimeSpec extract_atime(StatT const& st) { return st.st_atimespec; }
-#elif defined(__MVS__)
+#elif defined(__MVS__) || defined(__QNX__)
 inline TimeSpec extract_mtime(StatT const& st) {
   TimeSpec TS = {st.st_mtime, 0};
   return TS;

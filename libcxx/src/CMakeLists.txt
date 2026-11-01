@@ -178,6 +178,24 @@ split_list(LIBCXX_LINK_FLAGS)
 
 include(FindLibcCommonUtils)
 
+# QNX 6.5 lacks the locale handles and UTF-8 conversions used by libc++.
+# Embed C objects in both libraries so static users need no extra archive.
+if (CMAKE_SYSTEM_NAME STREQUAL "QNX")
+  add_library(cxx_qnx_locale OBJECT
+    support/qnx/locale/locale.c
+    support/qnx/locale/conversions.c
+    support/qnx/locale/decode.c
+    support/qnx/locale/encode.c
+    support/qnx/locale/encode_string.c
+    support/qnx/locale/utf8_table.c)
+  target_compile_features(cxx_qnx_locale PRIVATE c_std_11)
+  target_link_libraries(cxx_qnx_locale PRIVATE cxx-headers)
+  set_target_properties(cxx_qnx_locale PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  list(APPEND LIBCXX_SOURCES $<TARGET_OBJECTS:cxx_qnx_locale>)
+  install(FILES support/qnx/locale/vendor/musl/COPYRIGHT
+    DESTINATION "share/licenses/libc++" RENAME COPYING.musl COMPONENT cxx)
+endif()
+
 # Build the shared library.
 if (LIBCXX_SUPPORTS_SHARED_LIBRARY)
   add_library(cxx_shared SHARED ${LIBCXX_SOURCES} ${LIBCXX_HEADERS})

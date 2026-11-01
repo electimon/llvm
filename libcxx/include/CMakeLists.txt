@@ -572,6 +572,7 @@ set(files
   __locale_dir/support/no_locale/formatting.h
   __locale_dir/support/no_locale/strtonum.h
   __locale_dir/support/openbsd.h
+  __locale_dir/support/qnx.h
   __locale_dir/support/windows.h
   __locale_dir/time.h
   __locale_dir/utf8_conversions.h
@@ -1724,6 +1725,10 @@ set(files
   __cxx03/version
   __cxx03/wchar.h
   )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "QNX")
+  list(APPEND files qnxlocale.h)
+endif()
 
 configure_file("__config_site.in" "${LIBCXX_GENERATED_INCLUDE_TARGET_DIR}/__config_site" @ONLY)
 configure_file("${LIBCXX_ASSERTION_HANDLER_FILE}" "${LIBCXX_GENERATED_INCLUDE_DIR}/__assertion_handler" COPYONLY)

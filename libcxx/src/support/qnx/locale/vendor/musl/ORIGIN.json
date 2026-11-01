@@ -1,0 +1,16 @@
+{
+  "version": "1.2.5",
+  "url": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+  "archive_sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+  "files": {
+    "COPYRIGHT": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+    "src/multibyte/mbrtowc.c": "5e54562b56d55cee9ffafd42bc37bee9428610f657e001c0905153ed698fe43d",
+    "src/multibyte/wcrtomb.c": "a8f5bfa624c88f1e3214bcd46d909fb9c5b172ac9b634fb32a101161ab680693",
+    "src/multibyte/wcsnrtombs.c": "692b0daf62c9db77c6b67a35f10481be16841df458e7041df643e94a154f5796",
+    "src/multibyte/mbsnrtowcs.c": "e4d2c443f55abc5eb73ce5317da115e46496689466cb23f62ab401cfd47d9501",
+    "src/multibyte/internal.h": "e5ba77a0870b47c515e610827fe4a62842ec9c7a8e04edd6ece3498495e22a83",
+    "src/multibyte/internal.c": "925f6ac1d116631148076f868700689913ab6c2040b21be16d3abefa598514bd",
+    "src/locale/newlocale.c": "55e7e5b9278283474650adbdb537562a9b269b9d29f1886de0f0431db3f2fc35",
+    "src/locale/uselocale.c": "1acf4e2140b18430b5948f3e6cfe36844ec7b24cdc6d4dd9efb8ee1319508ce7"
+  }
+}

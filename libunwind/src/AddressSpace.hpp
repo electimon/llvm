@@ -381,7 +381,15 @@ LocalAddressSpace::getEncodedP(pint_t &addr, pint_t end, uint8_t encoding,
 // provided by <link.h> on some systems (e.g., FreeBSD). On these systems the
 // data structures are just called Elf_XXX. Define ElfW() locally.
 #if !defined(ElfW)
+#ifdef __QNX__
+#if __PTR_BITS__ == 32
+  #define ElfW(type) Elf32_##type
+#else
+  #define ElfW(type) Elf64_##type
+#endif
+#else
   #define ElfW(type) Elf_##type
+#endif
 #endif
 #if !defined(Elf_Half)
   typedef ElfW(Half) Elf_Half;
@@ -453,7 +461,14 @@ static bool checkForUnwindInfoSegment(const Elf_Phdr *phdr, size_t image_base,
 #endif
 }
 
-static inline int findUnwindSectionsByPhdr(struct dl_phdr_info *pinfo,
+// qnx 6.x seems to use const for dl_phdr_info
+#ifdef __QNX__
+#define _CONST const
+#else
+#define _CONST
+#endif
+
+static inline int findUnwindSectionsByPhdr(_CONST struct dl_phdr_info *pinfo,
                                            size_t pinfo_size, void *data) {
   auto cbdata = static_cast<dl_iterate_cb_data *>(data);
   if (pinfo->dlpi_phnum == 0 || cbdata->targetAddr < pinfo->dlpi_addr)

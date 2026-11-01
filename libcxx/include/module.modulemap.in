@@ -1643,6 +1643,7 @@ module std {
       textual header "__locale_dir/support/no_locale/characters.h"
       textual header "__locale_dir/support/no_locale/strtonum.h"
       textual header "__locale_dir/support/openbsd.h"
+      textual header "__locale_dir/support/qnx.h"
       textual header "__locale_dir/support/windows.h"
     }
 

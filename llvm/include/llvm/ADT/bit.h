@@ -48,6 +48,8 @@
 #define BIG_ENDIAN 4321
 #define LITTLE_ENDIAN 1234
 #define BYTE_ORDER BIG_ENDIAN
+#elif defined(__QNX__)
+#include <sys/param.h>
 #else
 #if !defined(BYTE_ORDER) && !defined(_WIN32)
 #include <machine/endian.h>
